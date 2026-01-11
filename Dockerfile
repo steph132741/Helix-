@@ -25,4 +25,4 @@ ENV DISPLAY=host.docker.internal:0.0
 ENV QT_X11_NO_MITSHM=1 
  
 # Run the application 
-CMD ["python", "helix.py"]
+CMD ["python", "Helix.py"]
