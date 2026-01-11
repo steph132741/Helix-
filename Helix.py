@@ -537,7 +537,7 @@ class ClinicalDataGUI:
         self.all_files = []
         self.displayed_files = []
         home = Path.home()
-        self.ftp_host = tk.StringVar(value="host.docker.internal")
+        self.ftp_host = tk.StringVar(value="localhost")
         self.ftp_user = tk.StringVar(value="anonymous")
         self.ftp_pass = tk.StringVar(value="")
         self.remote_dir = tk.StringVar(value="")
