@@ -1,0 +1,101 @@
+name: Build, Test, and Deploy HelixSoft
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to DockerHub (if needed)
+      if: github.event_name == 'push'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    
+    - name: Build Docker image
+      run: |
+        docker build -t helixsoft-clinical:latest .
+    
+    - name: Run unit tests inside container
+      run: |
+        docker run --rm helixsoft-clinical:latest python helix.py --test
+    
+    - name: Push to DockerHub (on main branch)
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        docker tag helixsoft-clinical:latest ${{ secrets.DOCKERHUB_USERNAME }}/helixsoft-clinical:latest
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/helixsoft-clinical:latest
+        docker tag helixsoft-clinical:latest ${{ secrets.DOCKERHUB_USERNAME }}/helixsoft-clinical:${{ github.sha }}
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/helixsoft-clinical:${{ github.sha }}
+
+  deploy-and-run:
+    needs: build-and-test
+    if: github.event_name == 'push'
+    runs-on: windows-latest  # Using Windows runner for Xming/X11
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Download and Install Xming
+      run: |
+        # Download Xming (using direct link from sourceforge)
+        $url = "https://downloads.sourceforge.net/project/xming/Xming/6.9.0.31/Xming-6-9-0-31-setup.exe"
+        $output = "Xming-setup.exe"
+        Invoke-WebRequest -Uri $url -OutFile $output
+        
+        # Silent install Xming
+        Start-Process -FilePath .\$output -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+        
+        # Start Xming server
+        Start-Process "C:\Program Files (x86)\Xming\Xming.exe" -ArgumentList ":0", "-ac"
+        
+        # Wait for Xming to start
+        Start-Sleep -Seconds 5
+        
+    - name: Pull and Run Docker container
+      env:
+        DISPLAY: localhost:0.0
+      run: |
+        # Login to DockerHub
+        docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+        
+        # Pull the image
+        docker pull ${{ secrets.DOCKERHUB_USERNAME }}/helixsoft-clinical:latest
+        
+        # Run with X11 forwarding
+        docker run -d \
+          --name helixsoft-app \
+          -e DISPLAY=host.docker.internal:0.0 \
+          -e QT_X11_NO_MITSHM=1 \
+          -v /tmp/.X11-unix:/tmp/.X11-unix \
+          ${{ secrets.DOCKERHUB_USERNAME }}/helixsoft-clinical:latest
+        
+        # Check if container is running
+        docker ps
+        
+        # Wait a moment for app to start
+        timeout /t 10
+        
+        # Take a screenshot of the container's display (optional)
+        # This would require additional setup
+        
+    - name: Verify application is running
+      run: |
+        # Check container status
+        docker ps --filter "name=helixsoft-app" --format "table {{.Names}}\t{{.Status}}"
+        
+        # Check container logs
+        docker logs helixsoft-app --tail 20
