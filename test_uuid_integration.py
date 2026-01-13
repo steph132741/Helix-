@@ -18,7 +18,7 @@ import uuid
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from helix import ClinicalDataValidator
+    from Helix import ClinicalDataValidator
     import requests
 except ImportError:
     print("Error: Could not import ClinicalDataValidator. Make sure helix.py is in the parent directory.")
@@ -47,7 +47,7 @@ class UUIDIntegrationTests(unittest.TestCase):
         if not hasattr(self.validator, '_generate_guid'):
             # Check if generate_uuid_from_api exists as a standalone function
             try:
-                from helix import generate_uuid_from_api
+                from Helix import generate_uuid_from_api
                 # If it's a standalone function, create a method that calls it
                 def _generate_guid():
                     return generate_uuid_from_api()
