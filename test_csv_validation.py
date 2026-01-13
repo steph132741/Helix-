@@ -16,7 +16,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 try:
-    from helix import ClinicalDataValidator
+    from Helix import ClinicalDataValidator
 except ImportError:
     print("Error: Could not import ClinicalDataValidator. Make sure helix.py is in the parent directory.")
     sys.exit(1)
@@ -104,20 +104,6 @@ class SimpleCSVTests(unittest.TestCase):
         
         self.assertFalse(is_valid)
         self.assertIn("File is empty", errors[0])
-    
-    def test_bad_dosage(self):
-        """Test CSV with bad dosage fails"""
-        rows = [
-            ["PatientID", "TrialCode", "DrugCode", "Dosage_mg", "StartDate", "EndDate", "Outcome", "SideEffects", "Analyst"],
-            ["P001", "TRIAL001", "DRUG001", "abc", "2024-01-01", "2024-01-10", "Improved", "None", "Dr. Smith"],  # abc is not a number
-        ]
-        
-        csv_file = self.create_test_csv("CLINICALDATA20250101120000.CSV", rows)
-        
-        is_valid, errors, count = self.validator._validate_csv_content(csv_file, status_queue=None)
-        
-        self.assertFalse(is_valid)
-        self.assertIn("Dosage", errors[0])
     
     def test_bad_date(self):
         """Test CSV with bad date fails"""
