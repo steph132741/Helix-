@@ -8,26 +8,14 @@ import re
 from typing import Optional
 
 class ClinicalDataValidatorRefactored:
-    """Refactored implementation with better design"""
-    
-    # Class constant for pattern - easier to maintain
+
     FILENAME_PATTERN = r'^CLINICALDATA\d{14}\.CSV$'
     
     def __init__(self, download_dir, archive_dir, error_dir):
-        # Compile pattern once for performance
         self.filename_regex = re.compile(self.FILENAME_PATTERN, re.IGNORECASE)
     
     def _validate_filename_pattern(self, filename, status_queue=None):
-        """
-        Refactored: Validate filename with better error handling
         
-        Args:
-            filename: Filename to validate
-            status_queue: Optional list to collect status messages
-            
-        Returns:
-            bool: True if filename matches pattern
-        """
         # FIX 1: Handle non-string input
         if not isinstance(filename, str):
             if status_queue is not None:
@@ -39,8 +27,7 @@ class ClinicalDataValidatorRefactored:
             if status_queue is not None:
                 status_queue.append("Filename cannot be empty")
             return False
-        
-        # Check pattern
+
         is_valid = bool(self.filename_regex.match(filename))
         
         # FIX 3: Actually add messages to status_queue if provided

@@ -1,0 +1,2 @@
+PatientID,TrialCode,DrugCode,Dosage_mg,StartDate,EndDate,Outcome,SideEffects,Analyst
+P001,T001,D001,100,2024-01-01,2024-01-02,Invalid,None,A1

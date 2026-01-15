@@ -20,6 +20,147 @@ import io
 import sys
 import unittest
 import tempfile
+from abc import ABC, abstractmethod
+
+#STRATEGY PATTERN
+class ValidationStrategy(ABC):
+    
+    @abstractmethod
+    def validate(self, data, status_queue=None):
+        pass
+    
+    @abstractmethod
+    def get_strategy_name(self):
+        pass
+
+
+class FilenameValidationStrategy(ValidationStrategy):
+    
+    def validate(self, filename, status_queue=None):
+        pattern = r'^CLINICALDATA\d{14}\.CSV$'
+        is_valid = re.match(pattern, filename, re.IGNORECASE) is not None
+        
+        if status_queue:
+            if is_valid:
+                status_queue.put((f"  ✓ Filename pattern valid (Strategy: {self.get_strategy_name()})", "success"))
+            else:
+                status_queue.put((f"  ✗ Invalid filename pattern (Strategy: {self.get_strategy_name()})", "error"))
+        
+        return is_valid
+    
+    def get_strategy_name(self):
+        return "Filename Pattern Validator"
+
+
+class CSVHeaderValidationStrategy(ValidationStrategy):    
+    def __init__(self):
+        self.expected_header = [
+            "PatientID", "TrialCode", "DrugCode", "Dosage_mg",
+            "StartDate", "EndDate", "Outcome", "SideEffects", "Analyst"
+        ]
+    
+    def validate(self, header, status_queue=None):
+        """Validate CSV header matches expected format"""
+        is_valid = header == self.expected_header
+        
+        if status_queue:
+            if is_valid:
+                status_queue.put((f"  ✓ Header valid (Strategy: {self.get_strategy_name()})", "success"))
+            else:
+                status_queue.put((f"  ✗ Header mismatch (Strategy: {self.get_strategy_name()})", "error"))
+        
+        return is_valid
+    
+    def get_strategy_name(self):
+        return "CSV Header Validator"
+
+
+class DosageValidationStrategy(ValidationStrategy):
+
+    def validate(self, dosage, status_queue=None):
+        """Validate dosage is positive integer"""
+        try:
+            dosage_val = int(dosage)
+            is_valid = dosage_val > 0
+            
+            if not is_valid and status_queue:
+                status_queue.put((f"    • Dosage error (Strategy: {self.get_strategy_name()})", "error"))
+            
+            return is_valid
+        except ValueError:
+            if status_queue:
+                status_queue.put((f"    • Non-numeric dosage (Strategy: {self.get_strategy_name()})", "error"))
+            return False
+    
+    def get_strategy_name(self):
+        return "Dosage Validator"
+
+
+class DateValidationStrategy(ValidationStrategy):
+    """Concrete Strategy: Validates date ranges and formats"""
+    
+    def validate(self, date_data, status_queue=None):
+        """date_data should be tuple (start_date, end_date)"""
+        start_date, end_date = date_data
+        
+        try:
+            sd = datetime.strptime(start_date, "%Y-%m-%d")
+            ed = datetime.strptime(end_date, "%Y-%m-%d")
+            
+            if ed < sd:
+                if status_queue:
+                    status_queue.put((f"    • Date range error (Strategy: {self.get_strategy_name()})", "error"))
+                return False
+            return True
+        except ValueError:
+            if status_queue:
+                status_queue.put((f"    • Date format error (Strategy: {self.get_strategy_name()})", "error"))
+            return False
+    
+    def get_strategy_name(self):
+        return "Date Range Validator"
+
+
+class OutcomeValidationStrategy(ValidationStrategy):
+    """Concrete Strategy: Validates outcome values"""
+    
+    def __init__(self):
+        self.valid_outcomes = ["Improved", "No Change", "Worsened"]
+    
+    def validate(self, outcome, status_queue=None):
+        """Validate outcome is one of allowed values"""
+        is_valid = outcome in self.valid_outcomes
+        
+        if not is_valid and status_queue:
+            status_queue.put((f"    • Invalid outcome (Strategy: {self.get_strategy_name()})", "error"))
+        
+        return is_valid
+    
+    def get_strategy_name(self):
+        return "Outcome Validator"
+
+
+class ValidationContext:
+    """Context class that uses validation strategies"""
+    
+    def __init__(self):
+        self.strategies = []
+    
+    def add_strategy(self, strategy):
+        """Add a validation strategy to the context"""
+        self.strategies.append(strategy)
+    
+    def execute_validation(self, data_type, data, status_queue=None):
+        """Execute appropriate validation strategy based on data type"""
+        for strategy in self.strategies:
+            if strategy.get_strategy_name().startswith(data_type):
+                return strategy.validate(data, status_queue)
+        return True  
+    
+    def get_all_strategies(self):
+        """Return list of all registered strategies"""
+        return [strategy.get_strategy_name() for strategy in self.strategies]
+#END STRATEGY PATTERN
 
 COLORS = {
     'primary': '#8B7355','secondary': '#A52A2A','accent': '#D2691E','dark_bg': '#2F4F4F',
@@ -124,11 +265,10 @@ class ClinicalDataValidator:
         try:
             response = requests.get("https://www.uuidtools.com/api/generate/v4", timeout=5)
             response.raise_for_status()
-            uuids = response.json()
-        
+            uuids = response.json() 
 
-            if isinstance(uuid, list) and len(uuid) > 0:
-                return uuid[0]
+            if isinstance(uuids, list) and len(uuids) > 0: 
+                return uuids[0]
         except requests.exceptions.Timeout: 
              pass
         except requests. exceptions.ConnectionError: 

@@ -66,38 +66,30 @@ class UUIDIntegrationTests(unittest.TestCase):
     def test_error_logging_with_uuid(self):
         """Test that error logging generates and includes UUIDs"""
         error_file = self.errors / "error_report.log"
-        
-        # Log an error
+
         guid, log_entry = self.validator._log_error("test.csv", "Test error message")
-        
-        # Verify GUID was generated
+
         self.assertIsInstance(guid, str)
         uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
         self.assertRegex(guid.lower(), uuid_pattern)
-        
-        # Verify log entry contains GUID
+
         self.assertIn(guid, log_entry)
         self.assertIn("test.csv", log_entry)
         self.assertIn("Test error message", log_entry)
-        
-        # Verify file was written
+
         self.assertTrue(error_file.exists())
         content = error_file.read_text()
         self.assertIn(guid, content)
     
     def test_uuid_format_validation(self):
         """Test that generated UUIDs follow correct format"""
-        # Generate a UUID using the standard library
         test_uuid = str(uuid.uuid4())
         
-        # Should be 36 characters
         self.assertEqual(len(test_uuid), 36)
-        
-        # Should have 5 parts separated by hyphens
+    
         parts = test_uuid.split('-')
         self.assertEqual(len(parts), 5)
-        
-        # Should be all hex characters
+
         uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
         self.assertRegex(test_uuid.lower(), uuid_pattern)
 

@@ -10,12 +10,10 @@ class ClinicalDataValidatorGreen:
     """Simple implementation for filename validation"""
     
     def __init__(self, download_dir, archive_dir, error_dir):
-        # Not needed for filename validation
         pass
     
     def _validate_filename_pattern(self, filename, status_queue=None):
         """GREEN: Implement filename pattern validation"""
-        # Pattern: CLINICALDATA + 14 digits + .CSV (case-insensitive)
         pattern = r'^CLINICALDATA\d{14}\.CSV$'
         is_valid = re.match(pattern, filename, re.IGNORECASE) is not None
         return is_valid

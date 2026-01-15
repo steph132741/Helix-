@@ -4,8 +4,7 @@ RED PHASE - Filename validation tests ONLY
 
 import unittest
 
-class MockClinicalDataValidator:
-    """Minimal mock for filename validation only"""
+class ClinicalDataValidator:
     
     def __init__(self, download_dir, archive_dir, error_dir):
         pass
@@ -16,7 +15,7 @@ class MockClinicalDataValidator:
 class TestFilenameValidationRed(unittest.TestCase):
     
     def setUp(self):
-        self.validator = MockClinicalDataValidator("download", "archive", "errors")
+        self.validator = ClinicalDataValidator("download", "archive", "errors")
     
     def test_01_valid_filename_exact_format(self):
         filename = "CLINICALDATA20250101120000.CSV"

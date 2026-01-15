@@ -1,0 +1,6 @@
+PatientID,TrialCode,DrugCode,Dosage_mg,StartDate,EndDate,Outcome,SideEffects,Analyst
+P001,T002,D002,100,2024-02-02,2024-03-02,No Change,Mild,A2
+P002,T003,D003,150,2024-03-03,2024-04-03,Worsened,Moderate,A3
+P003,T001,D004,200,2024-04-04,2024-05-04,Improved,Severe,A4
+P004,T002,D005,250,2024-05-05,2024-06-05,No Change,None,A5
+P005,T003,D001,300,2024-06-06,2024-07-06,Worsened,Mild,A1
