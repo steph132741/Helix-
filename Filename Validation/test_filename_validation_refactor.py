@@ -1,139 +1,68 @@
-"""
-REFACTOR PHASE - Improve filename validation
-Add better error handling and edge cases
-"""
+import pytest
 
-import unittest
-import re
-from typing import Optional
-
-class ClinicalDataValidatorRefactored:
-
-    FILENAME_PATTERN = r'^CLINICALDATA\d{14}\.CSV$'
+class FileValidator:
+    MIN_NAME_LEN = 2
+    VALID_EXT = {'pdf', 'png', 'csv', 'py', 'txt'}
+    BAD_CHARS = {'<', '>', ':', '"', '|', '?', '*', '\\', '/'}
     
-    def __init__(self, download_dir, archive_dir, error_dir):
-        self.filename_regex = re.compile(self.FILENAME_PATTERN, re.IGNORECASE)
-    
-    def _validate_filename_pattern(self, filename, status_queue=None):
-        
-        # FIX 1: Handle non-string input
-        if not isinstance(filename, str):
-            if status_queue is not None:
-                status_queue.append("Filename must be a string")
+    @classmethod
+    def validate(cls, filename):
+        if filename is None:
             return False
         
-        # FIX 2: Handle empty filename
-        if not filename:
-            if status_queue is not None:
-                status_queue.append("Filename cannot be empty")
+        f = str(filename).strip()
+        if not f:
             return False
+        
+        if '.' not in f:
+            return False
+        
+        parts = f.rsplit('.', 1)
+        if len(parts) != 2:
+            return False
+        
+        name, ext = parts
+        
+        if len(name) < cls.MIN_NAME_LEN:
+            return False
+        
+        if ext.lower() not in cls.VALID_EXT:
+            return False
+        
+        for char in cls.BAD_CHARS:
+            if char in name:
+                return False
+        
+        if len(f) > 255:
+            return False
+        
+        return True
 
-        is_valid = bool(self.filename_regex.match(filename))
-        
-        # FIX 3: Actually add messages to status_queue if provided
-        if status_queue is not None:
-            if is_valid:
-                status_queue.append(f"Filename '{filename}' is valid")
-            else:
-                status_queue.append(f"Filename '{filename}' doesn't match pattern: CLINICALDATAYYYYMMDDHHMMSS.CSV")
-        
-        return is_valid
-    
-class TestFilenameValidationRefactored(unittest.TestCase):
-    """REFACTOR PHASE TESTS - Improved filename validation"""
-    
-    def setUp(self):
-        self.validator = ClinicalDataValidatorRefactored("download", "archive", "errors")
-    
-    def test_01_valid_filename_exact_format(self):
-        filename = "CLINICALDATA20250101120000.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertTrue(result, "Exact format filename should be valid")
-    
-    def test_02_valid_filename_lowercase_extension(self):
-        filename = "CLINICALDATA20250101120000.csv"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertTrue(result, "Lowercase extension should be valid")
-    
-    def test_03_invalid_wrong_prefix(self):
-        filename = "CLINICAL-DATA20250101120000.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Wrong prefix should be invalid")
-    
-    def test_04_invalid_short_timestamp(self):
-        filename = "CLINICALDATA20250101.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Short timestamp should be invalid")
-    
-    def test_05_invalid_wrong_extension(self):
-        filename = "CLINICALDATA20250101120000.TXT"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Wrong extension should be invalid")
-    
-    def test_06_invalid_no_extension(self):
-        filename = "CLINICALDATA20250101120000"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Missing extension should be invalid")
-    
-    def test_07_invalid_empty_filename(self):
-        filename = ""
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Empty filename should be invalid")
-    
-    def test_08_invalid_only_prefix(self):
-        filename = "CLINICALDATA.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Only prefix should be invalid")
-    
-    def test_09_valid_future_timestamp(self):
-        filename = "CLINICALDATA20351231115959.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertTrue(result, "Future timestamp should be valid")
-    
-    def test_10_status_queue_messages(self):
-        """New test: Check status queue messages"""
-        status_queue = []
-        filename = "CLINICALDATA20250101120000.CSV"
-        result = self.validator._validate_filename_pattern(filename, status_queue)
-        
-        self.assertTrue(result)
-        self.assertEqual(len(status_queue), 1)
-        self.assertIn("is valid", status_queue[0])
-    
-    def test_11_status_queue_error_messages(self):
-        """New test: Error messages in status queue"""
-        status_queue = []
-        filename = "WRONGFILE.CSV"
-        result = self.validator._validate_filename_pattern(filename, status_queue)
-        
-        self.assertFalse(result)
-        self.assertEqual(len(status_queue), 1)
-        self.assertIn("doesn't match pattern", status_queue[0])
-    
-    def test_12_non_string_input(self):
-        """New test: Non-string input should fail gracefully"""
-        status_queue = []
-        filename = 12345  # Not a string
-        result = self.validator._validate_filename_pattern(filename, status_queue)
-        
-        self.assertFalse(result)
-        self.assertIn("must be a string", status_queue[0])
-    
-    def test_13_unicode_filename(self):
-        """New test: Unicode characters should fail"""
-        filename = "CLINICALDATA20250101120000.CSV©"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Unicode characters should be invalid")
-    
-    def test_14_spaces_in_filename(self):
-        """New test: Spaces should fail"""
-        filename = "CLINICALDATA 20250101120000.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Spaces should be invalid")
+def validate_filename(filename):
+    return FileValidator.validate(filename)
 
-if __name__ == '__main__':
-    print("=" * 60)
-    print("REFACTOR PHASE - Improved Filename Validation")
-    print("Expected: All tests PASS with refactored implementation")
-    print("=" * 60)
-    unittest.main(verbosity=2)
+class TestFilenameValidation:
+    def test_1_valid_filenames(self):
+        assert validate_filename("document.pdf") == True
+        assert validate_filename("image.png") == True
+        assert validate_filename("data.csv") == True
+    
+    def test_2_invalid_characters(self):
+        assert validate_filename("file<name.txt") == False
+        assert validate_filename("doc:ument.pdf") == False
+        assert validate_filename("data|file.csv") == False
+    
+    def test_3_length_limits(self):
+        assert validate_filename("a.txt") == False
+        assert validate_filename("ab.txt") == True
+        assert validate_filename("abc.txt") == True
+    
+    def test_4_extensions(self):
+        assert validate_filename("document") == False
+        assert validate_filename("script.py") == True
+        assert validate_filename("virus.exe") == False
+    
+    def test_5_empty_or_none(self):
+        assert validate_filename("") == False
+        assert validate_filename(None) == False
+        assert validate_filename("   ") == False

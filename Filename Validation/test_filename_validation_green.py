@@ -1,77 +1,65 @@
-"""
-GREEN PHASE - Implement filename validation
-Simple implementation to make tests pass
-"""
+import pytest
 
-import unittest
-import re
+def validate_filename(filename):
+    if filename is None:
+        return False
+    
+    filename = str(filename).strip()
+    
+    if not filename:
+        return False
+    
+    if len(filename) < 3:
+        return False
+    
+    if '.' not in filename:
+        return False
+    
+    parts = filename.rsplit('.', 1)
+    if len(parts) != 2:
+        return False
+    
+    name, ext = parts
+    
+    if len(name) < 2:
+        return False
+    
+    valid_ext = {'pdf', 'png', 'csv', 'py', 'txt'}
+    if ext.lower() not in valid_ext:
+        return False
+    
+    invalid_chars = {'<', '>', ':', '"', '|', '?', '*', '\\', '/'}
+    for char in invalid_chars:
+        if char in name:
+            return False
+    
+    if len(filename) > 255:
+        return False
+    
+    return True
 
-class ClinicalDataValidatorGreen:
-    """Simple implementation for filename validation"""
+class TestFilenameValidation:
+    def test_1_valid_filenames(self):
+        assert validate_filename("document.pdf") == True
+        assert validate_filename("image.png") == True
+        assert validate_filename("data.csv") == True
     
-    def __init__(self, download_dir, archive_dir, error_dir):
-        pass
+    def test_2_invalid_characters(self):
+        assert validate_filename("file<name.txt") == False
+        assert validate_filename("doc:ument.pdf") == False
+        assert validate_filename("data|file.csv") == False
     
-    def _validate_filename_pattern(self, filename, status_queue=None):
-        """GREEN: Implement filename pattern validation"""
-        pattern = r'^CLINICALDATA\d{14}\.CSV$'
-        is_valid = re.match(pattern, filename, re.IGNORECASE) is not None
-        return is_valid
-
-class TestFilenameValidationGreen(unittest.TestCase):
-    """GREEN PHASE TESTS - Filename validation implemented"""
+    def test_3_length_limits(self):
+        assert validate_filename("a.txt") == False
+        assert validate_filename("ab.txt") == True
+        assert validate_filename("abc.txt") == True
     
-    def setUp(self):
-        self.validator = ClinicalDataValidatorGreen("download", "archive", "errors")
+    def test_4_extensions(self):
+        assert validate_filename("document") == False
+        assert validate_filename("script.py") == True
+        assert validate_filename("virus.exe") == False
     
-    def test_01_valid_filename_exact_format(self):
-        filename = "CLINICALDATA20250101120000.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertTrue(result, "Exact format filename should be valid")
-    
-    def test_02_valid_filename_lowercase_extension(self):
-        filename = "CLINICALDATA20250101120000.csv"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertTrue(result, "Lowercase extension should be valid")
-    
-    def test_03_invalid_wrong_prefix(self):
-        filename = "CLINICAL-DATA20250101120000.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Wrong prefix should be invalid")
-    
-    def test_04_invalid_short_timestamp(self):
-        filename = "CLINICALDATA20250101.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Short timestamp should be invalid")
-    
-    def test_05_invalid_wrong_extension(self):
-        filename = "CLINICALDATA20250101120000.TXT"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Wrong extension should be invalid")
-    
-    def test_06_invalid_no_extension(self):
-        filename = "CLINICALDATA20250101120000"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Missing extension should be invalid")
-    
-    def test_07_invalid_empty_filename(self):
-        filename = ""
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Empty filename should be invalid")
-    
-    def test_08_invalid_only_prefix(self):
-        filename = "CLINICALDATA.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertFalse(result, "Only prefix should be invalid")
-    
-    def test_09_valid_future_timestamp(self):
-        filename = "CLINICALDATA20351231115959.CSV"
-        result = self.validator._validate_filename_pattern(filename)
-        self.assertTrue(result, "Future timestamp should be valid")
-
-if __name__ == '__main__':
-    print("=" * 60)
-    print("GREEN PHASE - Filename Validation Tests")
-    print("Expected: All tests PASS with implementation")
-    print("=" * 60)
-    unittest.main(verbosity=2)
+    def test_5_empty_or_none(self):
+        assert validate_filename("") == False
+        assert validate_filename(None) == False
+        assert validate_filename("   ") == False
