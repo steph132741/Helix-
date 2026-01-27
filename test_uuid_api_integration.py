@@ -28,8 +28,7 @@ class TestUUIDAPI(unittest.TestCase):
             "https://www.uuidtools.com/api/generate/v4",
             timeout=5
         )
-        # Instead of checking exact value, check it's one of the valid responses
-        # The function might return the API response OR fallback UUID
+        
         self.assertIsInstance(uuid, str)
         self.assertTrue(len(uuid) > 0)
     

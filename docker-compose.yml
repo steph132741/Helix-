@@ -13,6 +13,8 @@ services:
       - ./logs:/app/logs 
       - /tmp/.X11-unix:/tmp/.X11-unix:ro 
       - ~/.Xauthority:/root/.Xauthority:ro 
-    network_mode: "host"  # Required for X11 forwarding 
+    network_mode: "host" 
     stdin_open: true 
     tty: true
+
+    
